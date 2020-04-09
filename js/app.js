@@ -46,5 +46,52 @@ document.addEventListener('DOMContentLoaded', () => {
             hour: hour.value,
             symptom: symptom.value
         }
+
+        let trans = DB.transaction('quotes', 'readwrite')
+        let objectStore = trans.objectStore('quotes')
+        let req = objectStore.add(newQuote)
+
+        req.onsuccess = () => {
+            form.reset()
+        }
+
+        trans.oncomplete = () => {
+            console.log('Cita agregada')
+        }
+
+        trans.onerror = () => {
+            console.log('Hubo un error')
+        }
+    }
+
+    function getQuotes() {
+        while (quotes.firstChild) {
+            quotes.removeChild(quotes.firstChild)
+        }
+
+        let objectStore = DB.transaction('quotes').objectStore('quotes')
+
+        objectStore.openCursor().onsuccess = e => {
+            let cursor = e.target.result
+            if (cursor) {
+                let quoteHTML = document.createElement('li')
+
+                quoteHTML.setAttribute('data-cita-id', cursor.value.key)
+                quoteHTML.classList.add('list-group-item')
+
+                quoteHTML.innerHTML = `
+                    <p class="font-weight-bold">
+                        Mascota:
+                        <span class="font-weight-normal">
+                            ${cursor.value.pet}
+                        </span>
+                    </p>
+                `
+                quotes.appendChild(quoteHTML)
+                cursor.continue()
+            } else {
+                
+            }
+        }
     }
 })
