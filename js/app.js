@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     createDB.onsuccess = () => {
         console.log('Todo listo.')
         DB = createDB.result
+        getQuotes()
     }
 
     createDB.onupgradeneeded = e => {
@@ -47,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
             symptom: symptom.value
         }
 
-        let trans = DB.transaction('quotes', 'readwrite')
+        let trans = DB.transaction(['quotes'], 'readwrite')
         let objectStore = trans.objectStore('quotes')
         let req = objectStore.add(newQuote)
 
@@ -57,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         trans.oncomplete = () => {
             console.log('Cita agregada')
+            getQuotes()
         }
 
         trans.onerror = () => {
@@ -69,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             quotes.removeChild(quotes.firstChild)
         }
 
-        let objectStore = DB.transaction('quotes').objectStore('quotes')
+        let objectStore = DB.transaction(['quotes']).objectStore('quotes')
 
         objectStore.openCursor().onsuccess = e => {
             let cursor = e.target.result
@@ -86,12 +88,82 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${cursor.value.pet}
                         </span>
                     </p>
+                    <p class="font-weight-bold">
+                        Cliente:
+                        <span class="font-weight-normal">
+                            ${cursor.value.client}
+                        </span>
+                    </p>
+                    <p class="font-weight-bold">
+                        Teléfono:
+                        <span class="font-weight-normal">
+                            ${cursor.value.phone}
+                        </span>
+                    </p>
+                    <p class="font-weight-bold">
+                        Fecha:
+                        <span class="font-weight-normal">
+                            ${cursor.value.date}
+                        </span>
+                    </p>
+                    <p class="font-weight-bold">
+                        Hora:
+                        <span class="font-weight-normal">
+                            ${cursor.value.hour}
+                        </span>
+                    </p>
+                    <p class="font-weight-bold">
+                        Síntoma:
+                        <span class="font-weight-normal">
+                            ${cursor.value.symptom}
+                        </span>
+                    </p>
                 `
+                const btnDlt = document.createElement('button')
+                btnDlt.classList.add('borrar', 'btn', 'btn-danger')
+                btnDlt.innerHTML = `
+                    <span aria-hidden="true">
+                        X
+                    </span> Borrar
+                `
+                btnDlt
+
                 quotes.appendChild(quoteHTML)
                 cursor.continue()
             } else {
-                
+                if (!quotes.firstChild) {
+                    heading.textContent = 'Agrega citas para comenzar'
+                    let list = document.createElement('p')
+                    list.classList.add('text-center')
+                    list.textContent = 'No hay registros'
+                    quotes.appendChild(list)
+                } else {
+                    heading.textContent = 'Administra tus citas'
+                }
             }
         }
     }
-})
+
+    function deleteQuote(e) {
+        let quoteId = Number(e.target.parentElement.getAttribute('data-cita-id'))
+        let trans = DB.transaction(['quotes'], 'readwrite')
+        let objectStore = trans.objectStore('quotes')
+
+        let req = objectStore.delete(quoteId)
+
+        trans.oncomplete = () => {
+            e.target.parentElement.parentElement.removeChild(e.target.parentElement)
+            console.log(`Se ha eliminado la cita con id: ${quoteId}`)
+
+            if (!quotes.firstChild) {
+                heading.textContent = 'Agrega citas para comenzar'
+                let list = document.createElement('p')
+                list.classList.add('text-center')
+                list.textContent = 'No hay registros'
+                quotes.appendChild(list)
+            } else {
+                heading.textContent = 'Administra tus citas'
+            }
+        }
+    }
+ })
